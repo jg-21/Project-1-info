@@ -4,6 +4,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project 1</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.24.0/d3-legend.js"></script>
+
     <style>
       .gridlines line {
         stroke: #bbb;
@@ -16,21 +19,58 @@
       span {
         margin: 1%;
       }
-      #scatter {
+      #scatter,
+      #map {
         margin-left: 5%;
+      }
+      text {
+        font-family: "didot", Times, serif;
+      }
+      body {
+        background-color: #fffffc;
+      }
+      .title {
+        margin-top: 5%;
+        margin-left: 6.5%;
+        font-size: 30px;
+        font-weight: bold;
+        font-family: "didot", Times, serif;
+      }
+      .description {
+        margin-left: 6.5%;
+        font-size: 24px;
+        font-family: "didot", Times, serif;
+      }
+
+      .country {
+        fill: #f6f6f4;
+      }
+      .outline {
+        fill: none;
+        stroke: black;
+        stroke-width: 1px;
       }
     </style>
   </head>
-  <svg id="scatter" height="500" width="950"></svg>
 
   <body>
+    <div class="title">
+      Uncovering the Brew-tiful Relationship Between Coffee, GDP, and Happiness
+    </div>
+    <p class="description">
+      This scatterplot shows the relationship between the happiness index,
+      coffee consumption and GDP across the world <br />in the year 2019. The
+      size of the circle represents the coffee consumptions of the country.
+    </p>
+    <svg id="scatter" height="700" width="1300"></svg>
     <script>
       const svg = d3.select("svg#scatter");
       const width = svg.attr("width");
       const height = svg.attr("height");
-      const margin = { top: 30, right: 25, bottom: 55, left: 100 };
+      const margin = { top: 25, right: 200, bottom: 55, left: 100 };
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
+      const continents = ["America", "Europe", "Asia", "Africa", "Australia"];
 
       const requestData = async function () {
         const happinessData = await d3.csv("happiness.csv", d3.autotype);
@@ -70,18 +110,16 @@
           );
 
           // console.log(coffeeData.filter((d) => d["Country"]));
+          let filteredCoffee = coffeeData.filter((d) => d["Country"] === c)[0];
           let coffeeBags = Number(
-            coffeeData
-              .filter((d) => d["Country"] === c)[0]
-              ["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
+            filteredCoffee["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
           );
 
           let population = Number(
-            coffeeData
-              .filter((d) => d["Country"] === c)[0]
-              ["Population"].replace(/[^0-9]/g, "")
+            filteredCoffee["Population"].replace(/[^0-9]/g, "")
           );
-          let obj = { c, happyIdx, gdp, coffeeBags, population };
+          let continents = filteredCoffee["Continents"];
+          let obj = { c, happyIdx, gdp, coffeeBags, population, continents };
           combinedData.push(obj);
         });
 
@@ -97,12 +135,20 @@
 
         const xScale = d3
           .scaleLinear()
-          .domain(happinessExtent)
+          .domain([happinessExtent[0], 8.05])
           .range([0, chartWidth]);
         const yScale = d3
           .scaleLinear()
-          .domain(gdpExtent)
+          .domain([gdpExtent[0], 140000])
           .range([chartHeight, 0]);
+
+        const continentsColorScale = d3.scaleOrdinal(continents, [
+          "#8AC926",
+          "#FFC42F",
+          "#9B2A08",
+          "#1982C4",
+          "#6A4C93",
+        ]);
         let leftAxis = d3.axisLeft(yScale);
         svg
           .append("g")
@@ -143,16 +189,19 @@
             `translate(${margin.left}, ${margin.top + chartHeight + 10})`
           )
           .call(bottomGridlines);
+
         let circles = svg
           .append("g")
           .attr("transform", `translate(${margin.left},${margin.top})`);
         combinedData.forEach((d, i) => {
           //const fill = colorScale(d['state']);
+
           circles
             .append("circle")
             .attr("cx", xScale(d["happyIdx"]))
             .attr("cy", yScale(d["gdp"]))
-            .attr("r", (d["coffeeBags"] / d["population"]) * 80)
+            .attr("r", (d["coffeeBags"] / d["population"]) * 260)
+            .style("fill", continentsColorScale(d["continents"]))
             .attr("opacity", 0.8);
         });
         // console.log(
@@ -163,8 +212,11 @@
           .attr("class", "x")
           .attr("text-anchor", "middle")
           .attr("x", chartWidth / 2 + margin.left)
-          .attr("y", chartHeight + 81)
+          .attr("y", chartHeight + margin.top + margin.bottom - 5)
+          .style("font-size", "20px")
+
           .text("Happiness Index");
+
         svg
           .append("text")
           .attr("class", "y")
@@ -172,9 +224,244 @@
           .attr("text-anchor", "middle")
           .attr("x", -chartHeight / 2 - margin.top)
           .attr("y", 30)
+          .style("font-size", "20px")
+
           .text("GDP Per Capita");
+
+        continents.forEach((c, i) => {
+          chartArea
+            .append("circle")
+            .attr("cx", chartWidth + margin.right / 4)
+            .attr("cy", 50 + 30 * i)
+            .attr("r", 10)
+            .style("fill", continentsColorScale(c));
+          chartArea
+            .append("text")
+            .attr("x", chartWidth + margin.right / 4 + 20)
+            .attr("y", 58 + 30 * i)
+            .style("font-size", "20px")
+            .text(c);
+        });
       };
       requestData();
+    </script>
+    <div class="title">
+      How Coffee Fuels Happiness: Mapping Happiness and Coffee Consumption
+      Around the World
+    </div>
+    <p class="description">
+      This heatmap shows the relationship between the happiness index and
+      averaged coffee consumption across the five continents <br />of the world.
+      The size of the circles correspond to the amount of coffee consumption in
+      that continent.
+    </p>
+    <svg id="map" width="1300" height="700"></svg>
+
+    <script>
+      const svg2 = d3.select("svg#map");
+      const w = svg2.attr("width");
+      const h = svg2.attr("height");
+      const margins = { top: 20, right: 20, bottom: 20, left: 20 };
+      const mapWidth = w - margins.left - margins.right;
+      const mapHeight = h - margins.top - margins.bottom;
+      const map = svg2
+        .append("g")
+        .attr("transform", `translate(${margins.left} , ${margins.top})`);
+
+      const requestMap = async function () {
+        const world = await d3.json("countries-10m.json");
+        console.log(world);
+        const happyData = await d3.csv("happiness.csv");
+        const happinessExtent = d3.extent(happyData, (d) =>
+          Number(d["Happiness index, 2022"])
+        );
+
+        const coffeeData = await d3.csv("coffee-consumption.csv");
+
+        const colorScale = d3
+          .scaleSequential(d3.interpolateYlOrRd)
+          .domain([0, happinessExtent[1]]);
+
+        var countries = topojson.feature(world, world.objects.countries);
+        var countriesMesh = topojson.mesh(world, world.objects.countries);
+        var projection = d3
+          .geoEquirectangular()
+          .fitSize([mapWidth, mapHeight], countries);
+        var path = d3.geoPath().projection(projection);
+
+        console.log(countries);
+        console.log(countriesMesh);
+
+        const dict = {};
+        happyData.forEach((d) => {
+          dict[d["Countries"]] = Number(d["Happiness index, 2022"]);
+        });
+        console.log(dict);
+
+        let countryPaths = map
+          .selectAll("path.country")
+          .data(countries.features)
+          .join("path")
+          .attr("class", "country")
+          .style("fill", (d) => {
+            // console.log(d);
+            d.properties.total = dict[d.properties.name] || 0;
+            // console.log(d.properties.total);
+            return colorScale(d.properties.total);
+          })
+          .attr("d", path);
+        map
+          .append("path")
+          .datum(countriesMesh)
+          .attr("class", "outline")
+          .attr("d", path);
+
+        // const countriesInMap = countries.features.map((d) => {
+        //   return d["properties"]["name"];
+        // });
+
+        // const countriesInCoffee = coffeeData.map((d) => d["Country"]);
+
+        // const coffeeIntersect = d3.intersection(
+        //   countriesInMap,
+        //   countriesInCoffee
+        // );
+
+        // // console.log(coffeeIntersect);
+        // // console.log("v", Object.keys(coffeeIntersect));
+        // // const filterDataIntersect = countries.features.filter((d) =>
+        // //   Object.values(coffeeIntersect).includes(d["properties"]["name"])
+        // // );
+
+        // let coffeeGroup = svg2.append("g").attr("class", "coffee-group");
+        // console.log(coffeeGroup);
+        // coffeeData.forEach((d) => {
+        //   const countryName = d["Country"];
+        //   const matchingCountry = countries.features.find(
+        //     (feature) => feature.properties.name === countryName
+        //   );
+
+        //   if (matchingCountry) {
+        //     const centroid = path.centroid(matchingCountry);
+        //     const bags = Number(
+        //       d["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
+        //     );
+        //     const pop = Number(d["Population"].replace(/[^0-9]/g, ""));
+        //     coffeeGroup
+        //       // .append("path")
+        //       // .attr("class", "coffee")
+        //       // .attr(
+        //       //   "d",
+        //       //   "M420.47,881.796L420.47,881.796c-8.2-23.1-35.4-43.5-75.7-57.4l13.3-7.4c22-9.3,35.6-24.1,39.1-42.8     c3.3-15.9-2.5-30.4-15.2-38c-10.4-6.2-23-6.7-34.7-1.8v-11.6c0-10.5-6.7-25.5-38.7-37.2c-22.6-8.2-52.8-12.8-85.1-12.8     c-32.3,0-62.5,4.5-85.1,12.8c-32,11.7-38.7,26.7-38.7,37.2v49.9c0,17.1,3.4,33.6,10,48.8c-44.4,13.8-74.4,35.5-83.1,60.1     c-5.1,14.4-2.7,29.1,6.9,42.6c12.6,19,37.7,35.1,72.8,46.4c33.9,11,74.4,16.8,117.2,16.8s83.3-5.8,117.2-16.8     c35.1-11.3,60.2-27.4,72.8-46.4C423.17,910.796,425.57,896.096,420.47,881.796z M347.47,772.696v-21.2c8.7-6.1,19-7.1,26.9-2.4v0     c7.2,4.3,10.2,12.4,8.2,22.1v0.1c-2.6,13.8-12.9,24.6-30.5,31.9c-0.3,0.1-0.5,0.2-0.8,0.4l-9.1,5.1     C345.67,797.196,347.47,785.096,347.47,772.696z M143.67,699.696c21-7.7,49.4-11.9,80-11.9c30.6,0,59,4.2,80,11.9     c18.1,6.6,28.8,15.2,28.8,23.1c0,5.8-7.1,12.6-20.1,18.5c-0.2-0.4-0.4-0.7-0.6-1.1c-13.2-18.1-55.6-26.2-91.8-26.2     c-0.1,0-0.2,0-0.2,0c-34.1,1.1-73.6,8.9-84.4,27.4c-13.3-6-20.5-12.8-20.5-18.7C114.77,714.896,125.57,706.296,143.67,699.696z      M297.47,746.896c-18.4,5.7-43.5,9.7-73.9,9.7c-30.3-0.1-55.4-4.1-73.7-9.7c7.9-8.3,34.3-16.7,70.1-17.8     C257.67,729.096,287.57,737.796,297.47,746.896z M114.77,747.096c5.7,4.1,13.4,8.1,23.7,11.8c22.7,8.1,52.9,12.6,85.1,12.6     c32.1,0,62.3-4.5,85.1-12.6c10.4-3.7,18-7.7,23.7-11.8v25.7c0,59.8-48.8,108.6-108.8,108.6c-60,0-108.8-48.7-108.8-108.6V747.096     z M172.37,885.439c15.873,7.171,33.238,10.956,51.2,10.956c18,0,35.4-3.8,51.3-11v15.5c-31.2,18.2-71.4,18.2-102.5,0V885.439z      M401.27,915.696c-0.1,0.1-0.1,0.2-0.2,0.2c-21.8,33.3-94.9,56.5-177.5,56.5c-82.7,0-155.7-23.3-177.5-56.5     c-0.1-0.1-0.1-0.2-0.2-0.2c-6.8-9.5-8.5-19.3-5.1-29c7.1-20.2,35.3-39.3,75.8-51.5c5.2,8.9,11.6,17.3,19.1,24.8     c6.6,6.6,13.8,12.4,21.6,17.3v27.8c0,2.6,1.3,4.9,3.4,6.3c18.8,12.1,40.8,18.1,62.8,18.1s44-6,62.8-18.1c2.1-1.4,3.4-3.8,3.4-6.3     v-27.8c7.7-4.9,15-10.7,21.6-17.3c7.4-7.4,13.7-15.7,18.9-24.5c40.6,12.2,68.8,31.2,76,51.3     C409.77,896.496,408.07,906.196,401.27,915.696z"
+        //       // )
+        //       .append("circle")
+        //       .attr("cx", centroid[0] + 20)
+        //       .attr("cy", centroid[1] + 20)
+        //       .attr("r", (bags * 260) / pop)
+        //       .style("fill", "#218380")
+        //       .style("opacity", 0.6);
+        //     // .attr(
+        //     //   "transform",
+        //     //   `translate(${centroid[0]}, ${centroid[1]}) scale(${bags / pop})`
+        //     // );
+        //     // .attr("width", (bags / pop) * 100)
+        //     // .attr("height", (bags / pop) * 100);
+        //   }
+        // });
+
+        const dictCoffee = {};
+
+        coffeeData.forEach((d) => {
+          if (dictCoffee[d["Continents"]]) {
+            console.log(d["Continents"]);
+            dictCoffee[d["Continents"]].push(
+              Number(
+                d["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "") /
+                  Number(d["Population"].replace(/[^0-9]/g, ""))
+              )
+            );
+          } else {
+            dictCoffee[d["Continents"]] = [
+              Number(
+                d["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "") /
+                  Number(d["Population"].replace(/[^0-9]/g, ""))
+              ),
+            ];
+          }
+        });
+        console.log(dictCoffee);
+        const avgCoffee = [];
+        Object.keys(dictCoffee).forEach((k) => {
+          console.log(k);
+          let obj = {};
+          obj[k] = dictCoffee[k].reduce((a, b) => a + b) / dictCoffee[k].length;
+          avgCoffee.push(obj);
+        });
+
+        const positionx = [350, 700, 1000, 720, 1120];
+        const posy = [300, 150, 170, 320, 430];
+
+        console.log("avg", avgCoffee);
+        let coffeeGroup = svg2.append("g").attr("class", "coffee-group");
+        continents.forEach((c, i) => {
+          console.log(c);
+          console.log(avgCoffee[i][c]);
+          coffeeGroup
+            // .append("path")
+            // .attr("class", "coffee")
+            // .attr(
+            //   "d",
+            //   "M420.47,881.796L420.47,881.796c-8.2-23.1-35.4-43.5-75.7-57.4l13.3-7.4c22-9.3,35.6-24.1,39.1-42.8     c3.3-15.9-2.5-30.4-15.2-38c-10.4-6.2-23-6.7-34.7-1.8v-11.6c0-10.5-6.7-25.5-38.7-37.2c-22.6-8.2-52.8-12.8-85.1-12.8     c-32.3,0-62.5,4.5-85.1,12.8c-32,11.7-38.7,26.7-38.7,37.2v49.9c0,17.1,3.4,33.6,10,48.8c-44.4,13.8-74.4,35.5-83.1,60.1     c-5.1,14.4-2.7,29.1,6.9,42.6c12.6,19,37.7,35.1,72.8,46.4c33.9,11,74.4,16.8,117.2,16.8s83.3-5.8,117.2-16.8     c35.1-11.3,60.2-27.4,72.8-46.4C423.17,910.796,425.57,896.096,420.47,881.796z M347.47,772.696v-21.2c8.7-6.1,19-7.1,26.9-2.4v0     c7.2,4.3,10.2,12.4,8.2,22.1v0.1c-2.6,13.8-12.9,24.6-30.5,31.9c-0.3,0.1-0.5,0.2-0.8,0.4l-9.1,5.1     C345.67,797.196,347.47,785.096,347.47,772.696z M143.67,699.696c21-7.7,49.4-11.9,80-11.9c30.6,0,59,4.2,80,11.9     c18.1,6.6,28.8,15.2,28.8,23.1c0,5.8-7.1,12.6-20.1,18.5c-0.2-0.4-0.4-0.7-0.6-1.1c-13.2-18.1-55.6-26.2-91.8-26.2     c-0.1,0-0.2,0-0.2,0c-34.1,1.1-73.6,8.9-84.4,27.4c-13.3-6-20.5-12.8-20.5-18.7C114.77,714.896,125.57,706.296,143.67,699.696z      M297.47,746.896c-18.4,5.7-43.5,9.7-73.9,9.7c-30.3-0.1-55.4-4.1-73.7-9.7c7.9-8.3,34.3-16.7,70.1-17.8     C257.67,729.096,287.57,737.796,297.47,746.896z M114.77,747.096c5.7,4.1,13.4,8.1,23.7,11.8c22.7,8.1,52.9,12.6,85.1,12.6     c32.1,0,62.3-4.5,85.1-12.6c10.4-3.7,18-7.7,23.7-11.8v25.7c0,59.8-48.8,108.6-108.8,108.6c-60,0-108.8-48.7-108.8-108.6V747.096     z M172.37,885.439c15.873,7.171,33.238,10.956,51.2,10.956c18,0,35.4-3.8,51.3-11v15.5c-31.2,18.2-71.4,18.2-102.5,0V885.439z      M401.27,915.696c-0.1,0.1-0.1,0.2-0.2,0.2c-21.8,33.3-94.9,56.5-177.5,56.5c-82.7,0-155.7-23.3-177.5-56.5     c-0.1-0.1-0.1-0.2-0.2-0.2c-6.8-9.5-8.5-19.3-5.1-29c7.1-20.2,35.3-39.3,75.8-51.5c5.2,8.9,11.6,17.3,19.1,24.8     c6.6,6.6,13.8,12.4,21.6,17.3v27.8c0,2.6,1.3,4.9,3.4,6.3c18.8,12.1,40.8,18.1,62.8,18.1s44-6,62.8-18.1c2.1-1.4,3.4-3.8,3.4-6.3     v-27.8c7.7-4.9,15-10.7,21.6-17.3c7.4-7.4,13.7-15.7,18.9-24.5c40.6,12.2,68.8,31.2,76,51.3     C409.77,896.496,408.07,906.196,401.27,915.696z"
+            // )
+            .append("circle")
+            .attr("cx", positionx[i])
+            .attr("cy", posy[i])
+            .attr("r", avgCoffee[i][c] * 760)
+            .style("fill", "#2a9d8f")
+            .style("opacity", 0.2);
+          coffeeGroup
+            // .append("path")
+            // .attr("class", "coffee")
+            // .attr(
+            //   "d",
+            //   "M420.47,881.796L420.47,881.796c-8.2-23.1-35.4-43.5-75.7-57.4l13.3-7.4c22-9.3,35.6-24.1,39.1-42.8     c3.3-15.9-2.5-30.4-15.2-38c-10.4-6.2-23-6.7-34.7-1.8v-11.6c0-10.5-6.7-25.5-38.7-37.2c-22.6-8.2-52.8-12.8-85.1-12.8     c-32.3,0-62.5,4.5-85.1,12.8c-32,11.7-38.7,26.7-38.7,37.2v49.9c0,17.1,3.4,33.6,10,48.8c-44.4,13.8-74.4,35.5-83.1,60.1     c-5.1,14.4-2.7,29.1,6.9,42.6c12.6,19,37.7,35.1,72.8,46.4c33.9,11,74.4,16.8,117.2,16.8s83.3-5.8,117.2-16.8     c35.1-11.3,60.2-27.4,72.8-46.4C423.17,910.796,425.57,896.096,420.47,881.796z M347.47,772.696v-21.2c8.7-6.1,19-7.1,26.9-2.4v0     c7.2,4.3,10.2,12.4,8.2,22.1v0.1c-2.6,13.8-12.9,24.6-30.5,31.9c-0.3,0.1-0.5,0.2-0.8,0.4l-9.1,5.1     C345.67,797.196,347.47,785.096,347.47,772.696z M143.67,699.696c21-7.7,49.4-11.9,80-11.9c30.6,0,59,4.2,80,11.9     c18.1,6.6,28.8,15.2,28.8,23.1c0,5.8-7.1,12.6-20.1,18.5c-0.2-0.4-0.4-0.7-0.6-1.1c-13.2-18.1-55.6-26.2-91.8-26.2     c-0.1,0-0.2,0-0.2,0c-34.1,1.1-73.6,8.9-84.4,27.4c-13.3-6-20.5-12.8-20.5-18.7C114.77,714.896,125.57,706.296,143.67,699.696z      M297.47,746.896c-18.4,5.7-43.5,9.7-73.9,9.7c-30.3-0.1-55.4-4.1-73.7-9.7c7.9-8.3,34.3-16.7,70.1-17.8     C257.67,729.096,287.57,737.796,297.47,746.896z M114.77,747.096c5.7,4.1,13.4,8.1,23.7,11.8c22.7,8.1,52.9,12.6,85.1,12.6     c32.1,0,62.3-4.5,85.1-12.6c10.4-3.7,18-7.7,23.7-11.8v25.7c0,59.8-48.8,108.6-108.8,108.6c-60,0-108.8-48.7-108.8-108.6V747.096     z M172.37,885.439c15.873,7.171,33.238,10.956,51.2,10.956c18,0,35.4-3.8,51.3-11v15.5c-31.2,18.2-71.4,18.2-102.5,0V885.439z      M401.27,915.696c-0.1,0.1-0.1,0.2-0.2,0.2c-21.8,33.3-94.9,56.5-177.5,56.5c-82.7,0-155.7-23.3-177.5-56.5     c-0.1-0.1-0.1-0.2-0.2-0.2c-6.8-9.5-8.5-19.3-5.1-29c7.1-20.2,35.3-39.3,75.8-51.5c5.2,8.9,11.6,17.3,19.1,24.8     c6.6,6.6,13.8,12.4,21.6,17.3v27.8c0,2.6,1.3,4.9,3.4,6.3c18.8,12.1,40.8,18.1,62.8,18.1s44-6,62.8-18.1c2.1-1.4,3.4-3.8,3.4-6.3     v-27.8c7.7-4.9,15-10.7,21.6-17.3c7.4-7.4,13.7-15.7,18.9-24.5c40.6,12.2,68.8,31.2,76,51.3     C409.77,896.496,408.07,906.196,401.27,915.696z"
+            // )
+            .append("circle")
+            .attr("cx", positionx[i])
+            .attr("cy", posy[i])
+            .attr("r", avgCoffee[i][c] * 760)
+            .style("fill", "none")
+            .style("stroke", "black")
+            .style("stroke-width", 2)
+            .style("opacity", 1);
+          // .attr(
+          //   "transform",
+          //   `translate(${centroid[0]}, ${centroid[1]}) scale(${bags / pop})`
+          // );
+          // .attr("width", (bags / pop) * 100)
+          // .attr("height", (bags / pop) * 100);
+        });
+
+        var colorLegend = d3
+          .legendColor()
+          .labelFormat(d3.format(".0f"))
+          .scale(colorScale)
+          .shapePadding(5)
+          .shapeWidth(50)
+          .shapeHeight(20)
+          .labelOffset(12);
+
+        svg2
+          .append("g")
+          .attr("transform", "translate(150, 400)")
+          .call(colorLegend)
+          .append("text")
+          .attr("text-anchor", "left")
+          .text("Happiness Index")
+          .attr("transform", "translate(-25, -30)");
+      };
+
+      requestMap();
     </script>
   </body>
 </html>
