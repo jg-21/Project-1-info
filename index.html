@@ -121,14 +121,15 @@
           );
           // console.log(happyL);
           let gdp = Number(
-            gdpData.filter((d) => d["Entity"])[0][
+            gdpData.filter((d) => d["Entity"] === c)[0][
               "GDP per capita, PPP (constant 2017 international $)"
             ]
           );
 
+          // console.log(coffeeData.filter((d) => d["Country"]));
           let coffeeBags = Number(
             coffeeData
-              .filter((d) => d["Country"])[0]
+              .filter((d) => d["Country"] === c)[0]
               ["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
           );
           let obj = { c, happyIdx, gdp, coffeeBags };
