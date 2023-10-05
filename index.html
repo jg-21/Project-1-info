@@ -1,147 +1,162 @@
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Project 1</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-      .gridlines line {
-        stroke: #bbb;
-      }
 
-      .gridlines .domain {
-        stroke: none;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 1</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .gridlines line {
+      stroke: #bbb;
+    }
 
-      span {
-        margin: 1%;
-      }
-    </style>
-  </head>
-  <svg id="scatter" height="500" width="500"></svg>
+    .gridlines .domain {
+      stroke: none;
+    }
 
-  <body>
-    <script>
-      const svg = d3.select("svg#scatter");
-      const width = svg.attr("width");
-      const height = svg.attr("height");
-      const margin = { top: 10, right: 10, bottom: 55, left: 55 };
-      const chartWidth = width - margin.left - margin.right;
-      const chartHeight = height - margin.top - margin.bottom;
+    span {
+      margin: 1%;
+    }
+  </style>
+</head>
+<svg id="scatter" height="500" width="500"></svg>
 
-      const requestData = async function () {
-        const happinessData = await d3.csv("happiness.csv", d3.autotype);
-        console.log(happinessData);
-        let gdpData = await d3.csv("gdp-per-capita-worldbank.csv", d3.autotype);
-        gdpData = gdpData.filter((d) => {
-          return d["Year"] === "2019";
-        });
-        console.log(gdpData);
-        let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
-        console.log(coffeeData);
+<body>
+  <script>
+    const svg = d3.select("svg#scatter");
+    const width = svg.attr("width");
+    const height = svg.attr("height");
+    const margin = { top: 25, right: 25, bottom: 55, left: 55 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
 
-        const happinessExtent = d3.extent(happinessData, (d) =>
-          Number(d["Happiness index, 2022"])
+    const requestData = async function () {
+      const happinessData = await d3.csv("happiness.csv", d3.autotype);
+      console.log(happinessData);
+      let gdpData = await d3.csv("gdp-per-capita-worldbank.csv", d3.autotype);
+      gdpData = gdpData.filter((d) => {
+        return d["Year"] === "2019";
+      });
+      console.log(gdpData);
+      let coffeeData = await d3.csv("CoffeeConsumption2023.csv", d3.autotype);
+      console.log(coffeeData);
+
+
+
+      let chartArea = svg
+        .append("g")
+        .attr("id", "points")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      const coffeeCountries = coffeeData.map((d) => d["Country"]);
+      const gdpCountries = gdpData.map((d) => d["Entity"]);
+      const happinessCountries = happinessData.map((d) => d["Countries"]);
+      let combinedData = [];
+      d3.intersection(
+        coffeeCountries,
+        gdpCountries,
+        happinessCountries
+      ).forEach((c) => {
+        let happyIdx = Number(
+          happinessData.filter((d) => d["Countries"] === c)[0][
+          "Happiness index, 2022"
+          ]
         );
-        console.log(happinessExtent);
-        const gdpExtent = d3.extent(gdpData, (d) =>
-          Number(d["GDP per capita, PPP (constant 2017 international $)"])
+        // console.log(happyL);
+        let gdp = Number(
+          gdpData.filter((d) => d["Entity"] === c)[0][
+          "GDP per capita, PPP (constant 2017 international $)"
+          ]
         );
-        console.log(gdpExtent);
 
-        const xScale = d3
-          .scaleLinear()
-          .domain(happinessExtent)
-          .range([0, chartWidth]);
-        const yScale = d3
-          .scaleLinear()
-          .domain(gdpExtent)
-          .range([chartHeight, 0]);
+        // console.log(coffeeData.filter((d) => d["Country"]));
+        let coffeeBags = Number(
+          coffeeData
+            .filter((d) => d["Country"] === c)[0]
+          ["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
+        );
 
-        let leftAxis = d3.axisLeft(yScale);
+        let population = Number(
+          coffeeData.filter((d) => d["Country"] === c)[0]
+          ["Population"].replace(/[^0-9]/g, "")
+        )
+        let obj = { c, happyIdx, gdp, coffeeBags, population };
+        combinedData.push(obj);
+      });
 
-        svg
-          .append("g")
-          .attr("class", "y axis")
-          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
-          .call(leftAxis);
+      console.log(combinedData);
+      const happinessExtent = d3.extent(combinedData, (d) =>
+        Number(d["happyIdx"])
+      );
+      console.log(happinessExtent);
+      const gdpExtent = d3.extent(combinedData, (d) =>
+        Number(d["gdp"])
+      );
+      console.log(gdpExtent);
 
-        let leftGridlines = d3
-          .axisLeft(yScale)
-          .tickFormat("")
-          .tickSize(-chartWidth - 10);
+      const xScale = d3
+        .scaleLinear()
+        .domain(happinessExtent)
+        .range([0, chartWidth]);
+      const yScale = d3
+        .scaleLinear()
+        .domain(gdpExtent)
+        .range([chartHeight, 0]);
+      let leftAxis = d3.axisLeft(yScale);
+      svg
+        .append("g")
+        .attr("class", "y axis")
+        .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+        .call(leftAxis);
 
-        svg
-          .append("g")
-          .attr("class", "y gridlines")
-          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
-          .call(leftGridlines);
+      let leftGridlines = d3
+        .axisLeft(yScale)
+        .tickFormat("")
+        .tickSize(-chartWidth - 10);
 
-        let bottomAxis = d3.axisBottom(xScale);
-        svg
-          .append("g")
-          .attr("class", "x axis")
-          .attr(
-            "transform",
-            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
-          )
-          .call(bottomAxis);
+      svg
+        .append("g")
+        .attr("class", "y gridlines")
+        .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+        .call(leftGridlines);
 
-        let bottomGridlines = d3
-          .axisBottom(xScale)
-          .tickFormat("")
-          .tickSize(-chartHeight - 10);
-        svg
-          .append("g")
-          .attr("class", "x gridlines")
-          .attr(
-            "transform",
-            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
-          )
-          .call(bottomGridlines);
+      let bottomAxis = d3.axisBottom(xScale);
+      svg
+        .append("g")
+        .attr("class", "x axis")
+        .attr(
+          "transform",
+          `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+        )
+        .call(bottomAxis);
 
-        let chartArea = svg
-          .append("g")
-          .attr("id", "points")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
+      let bottomGridlines = d3
+        .axisBottom(xScale)
+        .tickFormat("")
+        .tickSize(-chartHeight - 10);
+      svg
+        .append("g")
+        .attr("class", "x gridlines")
+        .attr(
+          "transform",
+          `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+        )
+        .call(bottomGridlines);
+      let circles = svg.append('g').attr("transform", `translate(${margin.left},${margin.top})`);;
+      combinedData.forEach((d, i) => {
+        //const fill = colorScale(d['state']);
+        circles.append('circle')
+          .attr('cx', xScale(d['happyIdx']))
+          .attr('cy', yScale(d['gdp']))
+          .attr('r', (d['coffeeBags'] / d['population']) * 80)
+          .attr('opacity', 0.8)
+      });
+      // console.log(
+      //   d3.intersection(coffeeCountries, gdpCountries, happinessCountries)
+      // );
+    };
+    requestData();
+  </script>
+</body>
 
-        const coffeeCountries = coffeeData.map((d) => d["Country"]);
-        const gdpCountries = gdpData.map((d) => d["Entity"]);
-        const happinessCountries = happinessData.map((d) => d["Countries"]);
-        let combinedData = [];
-        d3.intersection(
-          coffeeCountries,
-          gdpCountries,
-          happinessCountries
-        ).forEach((c) => {
-          let happyIdx = Number(
-            happinessData.filter((d) => d["Countries"] === c)[0][
-              "Happiness index, 2022"
-            ]
-          );
-          // console.log(happyL);
-          let gdp = Number(
-            gdpData.filter((d) => d["Entity"] === c)[0][
-              "GDP per capita, PPP (constant 2017 international $)"
-            ]
-          );
-
-          // console.log(coffeeData.filter((d) => d["Country"]));
-          let coffeeBags = Number(
-            coffeeData
-              .filter((d) => d["Country"] === c)[0]
-              ["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
-          );
-          let obj = { c, happyIdx, gdp, coffeeBags };
-          combinedData.push(obj);
-        });
-
-        console.log(combinedData);
-        // console.log(
-        //   d3.intersection(coffeeCountries, gdpCountries, happinessCountries)
-        // );
-      };
-      requestData();
-    </script>
-  </body>
 </html>
