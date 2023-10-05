@@ -23,8 +23,11 @@
     console.log(data)
   })
   d3.csv('gdp-per-capita-worldbank.csv', d3.autoType).then((data) => {
-    console.log(data)
+    console.log(data);
+    data = data.filter(d => { return d['Year'] == 2019 });
+    console.log(data);
   })
+
 </script>
 
 </html>
