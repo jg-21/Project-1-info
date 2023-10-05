@@ -7,24 +7,31 @@
   </head>
   <svg id="scatter" height="1000" width="1000"></svg>
 
-  <body></body>
-  <script>
-    const svg = d3.select("svg#scatter");
-    const width = svg.attr("width");
-    const height = svg.attr("height");
-    const margin = { top: 10, right: 10, bottom: 50, left: 50 };
-    const chartWidth = width - margin.left - margin.right;
-    const chartHeight = height - margin.top - margin.bottom;
-
-    const requestData = async function () {
-      const happinessData = await d3.csv("happiness.csv");
-      console.log(happinessData);
-      const gdpData = await d3.csv("gdp-per-capita-worldbank.csv");
-      console.log(gdpData);
-      const coffeeData = await d3.csv("coffee-consumption.csv");
-      console.log(coffeeData);
-    };
-
-    requestData();
-  </script>
+  <body>
+    <script>
+      const svg = d3.select("svg#scatter");
+      const width = svg.attr("width");
+      const height = svg.attr("height");
+      const margin = { top: 10, right: 10, bottom: 50, left: 50 };
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+      let chartArea = svg
+        .append("g")
+        .attr("id", "points")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+      const requestData = async function () {
+        const happinessData = await d3.csv("happiness.csv", d3.autotype);
+        console.log(happinessData);
+        let gdpData = await d3.csv("gdp-per-capita-worldbank.csv", d3.autotype);
+        gdpData = gdpData.filter((d) => {
+          return d["Year"] === "2019";
+        });
+        console.log(gdpData);
+        let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
+        coffeeData = coffeeData.filter((d) => d["totCons2019"] !== "");
+        console.log(coffeeData);
+      };
+      requestData();
+    </script>
+  </body>
 </html>
