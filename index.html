@@ -22,8 +22,12 @@
     console.log(data)
   })
   d3.csv('gdp-per-capita-worldbank.csv', d3.autoType).then((data) => {
-    console.log(data)
+    console.log(data);
     data = data.filter(d => { return d['Year'] == 2019 });
+  })
+  d3.csv('coffee-consumption.csv', d3.autoType).then((data) => {
+    console.log(data);
+    data = data.filter(d => { return d['totCons2019'] !== null });
     console.log(data);
   })
 </script>
