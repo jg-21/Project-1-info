@@ -4,8 +4,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project 1</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      .gridlines line {
+        stroke: #bbb;
+      }
+
+      .gridlines .domain {
+        stroke: none;
+      }
+      span {
+        margin: 1%;
+      }
+    </style>
   </head>
-  <svg id="scatter" height="1000" width="1000"></svg>
+  <svg id="scatter" height="500" width="500"></svg>
 
   <body>
     <script>
@@ -15,10 +27,7 @@
       const margin = { top: 10, right: 10, bottom: 50, left: 50 };
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
-      let chartArea = svg
-        .append("g")
-        .attr("id", "points")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+
       const requestData = async function () {
         const happinessData = await d3.csv("happiness.csv", d3.autotype);
         console.log(happinessData);
@@ -30,6 +39,71 @@
         let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
         coffeeData = coffeeData.filter((d) => d["totCons2019"] !== "");
         console.log(coffeeData);
+
+        const happinessExtent = d3.extent(happinessData, (d) =>
+          Number(d["Happiness index, 2022"])
+        );
+        console.log(happinessExtent);
+        const gdpExtent = d3.extent(gdpData, (d) =>
+          Number(d["GDP per capita, PPP (constant 2017 international $)"])
+        );
+        console.log(gdpExtent);
+
+        const xScale = d3
+          .scaleLinear()
+          .domain(happinessExtent)
+          .range([0, chartWidth]);
+        const yScale = d3
+          .scaleLinear()
+          .domain(gdpExtent)
+          .range([chartHeight, 0]);
+
+        let leftAxis = d3.axisLeft(yScale);
+
+        svg
+          .append("g")
+          .attr("class", "y axis")
+          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+          .call(leftAxis);
+
+        let leftGridlines = d3
+          .axisLeft(yScale)
+          .tickFormat("")
+          .tickSize(-chartWidth - 10);
+
+        svg
+          .append("g")
+          .attr("class", "y gridlines")
+          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+          .call(leftGridlines);
+
+        let bottomAxis = d3.axisBottom(xScale);
+        svg
+          .append("g")
+          .attr("class", "x axis")
+          .attr(
+            "transform",
+            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+          )
+          .call(bottomAxis);
+
+        let bottomGridlines = d3
+          .axisBottom(xScale)
+          .tickFormat("")
+          .tickSize(-chartHeight - 10);
+        svg
+          .append("g")
+          .attr("class", "x gridlines")
+          .attr(
+            "transform",
+            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+          )
+          .call(bottomGridlines);
+
+        let chartArea = svg
+          .append("g")
+          .attr("id", "points")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
       };
       requestData();
     </script>
