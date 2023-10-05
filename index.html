@@ -17,6 +17,14 @@
   const margin = { top: 10, right: 10, bottom: 50, left: 50 };
   const chartWidth = width - margin.left - margin.right;
   const chartHeight = height - margin.top - margin.bottom;
+  let chartArea = svg.append("g").attr("id", "points")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+  d3.csv('happiness.csv', d3.autoType).then((data) => {
+    console.log(data)
+  })
+  d3.csv('gdp-per-capita-worldbank.csv', d3.autoType).then((data) => {
+    console.log(data)
+  })
 </script>
 
 </html>
