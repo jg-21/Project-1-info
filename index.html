@@ -103,6 +103,41 @@
           .append("g")
           .attr("id", "points")
           .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const coffeeCountries = coffeeData.map((d) => d["Country"]);
+        const gdpCountries = gdpData.map((d) => d["Entity"]);
+        const happinessCountries = happinessData.map((d) => d["Countries"]);
+        let combinedData = [];
+        d3.intersection(
+          coffeeCountries,
+          gdpCountries,
+          happinessCountries
+        ).forEach((c) => {
+          let happyIdx = Number(
+            happinessData.filter((d) => d["Countries"] === c)[0][
+              "Happiness index, 2022"
+            ]
+          );
+          // console.log(happyL);
+          let gdp = Number(
+            gdpData.filter((d) => d["Entity"])[0][
+              "GDP per capita, PPP (constant 2017 international $)"
+            ]
+          );
+
+          let coffeeBags = Number(
+            coffeeData
+              .filter((d) => d["Country"])[0]
+              ["Coffee Consumption (Bags) "].replace(/[^0-9]/g, "")
+          );
+          let obj = { c, happyIdx, gdp, coffeeBags };
+          combinedData.push(obj);
+        });
+
+        console.log(combinedData);
+        // console.log(
+        //   d3.intersection(coffeeCountries, gdpCountries, happinessCountries)
+        // );
       };
       requestData();
     </script>
