@@ -37,7 +37,6 @@
         });
         console.log(gdpData);
         let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
-        coffeeData = coffeeData.filter((d) => d["totCons2019"] !== "");
         console.log(coffeeData);
 
         const happinessExtent = d3.extent(happinessData, (d) =>
