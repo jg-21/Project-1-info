@@ -1,110 +1,113 @@
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Project 1</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-      .gridlines line {
-        stroke: #bbb;
-      }
 
-      .gridlines .domain {
-        stroke: none;
-      }
-      span {
-        margin: 1%;
-      }
-    </style>
-  </head>
-  <svg id="scatter" height="500" width="500"></svg>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 1</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .gridlines line {
+      stroke: #bbb;
+    }
 
-  <body>
-    <script>
-      const svg = d3.select("svg#scatter");
-      const width = svg.attr("width");
-      const height = svg.attr("height");
-      const margin = { top: 10, right: 10, bottom: 50, left: 50 };
-      const chartWidth = width - margin.left - margin.right;
-      const chartHeight = height - margin.top - margin.bottom;
+    .gridlines .domain {
+      stroke: none;
+    }
 
-      const requestData = async function () {
-        const happinessData = await d3.csv("happiness.csv", d3.autotype);
-        console.log(happinessData);
-        let gdpData = await d3.csv("gdp-per-capita-worldbank.csv", d3.autotype);
-        gdpData = gdpData.filter((d) => {
-          return d["Year"] === "2019";
-        });
-        console.log(gdpData);
-        let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
-        console.log(coffeeData);
+    span {
+      margin: 1%;
+    }
+  </style>
+</head>
+<svg id="scatter" height="500" width="500"></svg>
 
-        const happinessExtent = d3.extent(happinessData, (d) =>
-          Number(d["Happiness index, 2022"])
-        );
-        console.log(happinessExtent);
-        const gdpExtent = d3.extent(gdpData, (d) =>
-          Number(d["GDP per capita, PPP (constant 2017 international $)"])
-        );
-        console.log(gdpExtent);
+<body>
+  <script>
+    const svg = d3.select("svg#scatter");
+    const width = svg.attr("width");
+    const height = svg.attr("height");
+    const margin = { top: 10, right: 10, bottom: 55, left: 55 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
 
-        const xScale = d3
-          .scaleLinear()
-          .domain(happinessExtent)
-          .range([0, chartWidth]);
-        const yScale = d3
-          .scaleLinear()
-          .domain(gdpExtent)
-          .range([chartHeight, 0]);
+    const requestData = async function () {
+      const happinessData = await d3.csv("happiness.csv", d3.autotype);
+      console.log(happinessData);
+      let gdpData = await d3.csv("gdp-per-capita-worldbank.csv", d3.autotype);
+      gdpData = gdpData.filter((d) => {
+        return d["Year"] === "2019";
+      });
+      console.log(gdpData);
+      let coffeeData = await d3.csv("coffee-consumption.csv", d3.autotype);
+      console.log(coffeeData);
 
-        let leftAxis = d3.axisLeft(yScale);
+      const happinessExtent = d3.extent(happinessData, (d) =>
+        Number(d["Happiness index, 2022"])
+      );
+      console.log(happinessExtent);
+      const gdpExtent = d3.extent(gdpData, (d) =>
+        Number(d["GDP per capita, PPP (constant 2017 international $)"])
+      );
+      console.log(gdpExtent);
 
-        svg
-          .append("g")
-          .attr("class", "y axis")
-          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
-          .call(leftAxis);
+      const xScale = d3
+        .scaleLinear()
+        .domain(happinessExtent)
+        .range([0, chartWidth]);
+      const yScale = d3
+        .scaleLinear()
+        .domain(gdpExtent)
+        .range([chartHeight, 0]);
 
-        let leftGridlines = d3
-          .axisLeft(yScale)
-          .tickFormat("")
-          .tickSize(-chartWidth - 10);
+      let leftAxis = d3.axisLeft(yScale);
 
-        svg
-          .append("g")
-          .attr("class", "y gridlines")
-          .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
-          .call(leftGridlines);
+      svg
+        .append("g")
+        .attr("class", "y axis")
+        .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+        .call(leftAxis);
 
-        let bottomAxis = d3.axisBottom(xScale);
-        svg
-          .append("g")
-          .attr("class", "x axis")
-          .attr(
-            "transform",
-            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
-          )
-          .call(bottomAxis);
+      let leftGridlines = d3
+        .axisLeft(yScale)
+        .tickFormat("")
+        .tickSize(-chartWidth - 10);
 
-        let bottomGridlines = d3
-          .axisBottom(xScale)
-          .tickFormat("")
-          .tickSize(-chartHeight - 10);
-        svg
-          .append("g")
-          .attr("class", "x gridlines")
-          .attr(
-            "transform",
-            `translate(${margin.left}, ${margin.top + chartHeight + 10})`
-          )
-          .call(bottomGridlines);
+      svg
+        .append("g")
+        .attr("class", "y gridlines")
+        .attr("transform", `translate(${margin.left - 10}, ${margin.top})`)
+        .call(leftGridlines);
 
-        let chartArea = svg
-          .append("g")
-          .attr("id", "points")
-          .attr("transform", `translate(${margin.left},${margin.top})`);
-      };
-      requestData();
-    </script>
-  </body>
+      let bottomAxis = d3.axisBottom(xScale);
+      svg
+        .append("g")
+        .attr("class", "x axis")
+        .attr(
+          "transform",
+          `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+        )
+        .call(bottomAxis);
+
+      let bottomGridlines = d3
+        .axisBottom(xScale)
+        .tickFormat("")
+        .tickSize(-chartHeight - 10);
+      svg
+        .append("g")
+        .attr("class", "x gridlines")
+        .attr(
+          "transform",
+          `translate(${margin.left}, ${margin.top + chartHeight + 10})`
+        )
+        .call(bottomGridlines);
+
+      let chartArea = svg
+        .append("g")
+        .attr("id", "points")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    };
+    requestData();
+  </script>
+</body>
+
 </html>
